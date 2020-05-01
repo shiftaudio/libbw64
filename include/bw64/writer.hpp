@@ -12,6 +12,10 @@
 #include "chunks.hpp"
 #include "utils.hpp"
 
+#if __cplusplus >= 201703L
+#include <filesystem>
+#endif
+
 namespace bw64 {
 
   const uint32_t MAX_NUMBER_OF_UIDS = 1024;
@@ -46,10 +50,25 @@ namespace bw64 {
      * @note For convenience, you might consider using the `writeFile` helper
      * function.
      */
-    Bw64Writer(const char* filename, uint16_t channels, uint32_t sampleRate,
+#if __cplusplus >= 201703L
+    Bw64Writer(std::filesystem::path const& filename,
+               uint16_t channels,
+               uint32_t sampleRate,
                uint16_t bitDepth,
-               std::vector<std::shared_ptr<Chunk>> additionalChunks) {
+               std::vector<std::shared_ptr<Chunk>> additionalChunks)
+#else
+    Bw64Writer(std::string const& filename,
+               uint16_t channels,
+               uint32_t sampleRate,
+               uint16_t bitDepth,
+               std::vector<std::shared_ptr<Chunk>> additionalChunks)
+#endif
+    {
+#if __cplusplus >= 201103L
       fileStream_.open(filename, std::fstream::out | std::fstream::binary);
+#else
+      fileStream_.open(filename.c_str(), std::fstream::out | std::fstream::binary);
+#endif
       if (!fileStream_.is_open()) {
         std::stringstream errorString;
         errorString << "Could not open file: " << filename;

@@ -15,6 +15,10 @@
 
 #include <iostream>
 
+#if __cplusplus >= 201703L
+#include <filesystem>
+#endif
+
 namespace bw64 {
 
   /**
@@ -38,8 +42,17 @@ namespace bw64 {
      * @note For convenience, you might consider using the `readFile` helper
      * function.
      */
-    Bw64Reader(const char* filename) {
+#if __cplusplus >= 201703L
+	Bw64Reader(std::filesystem::path const& filename)		
+#else
+    Bw64Reader(std::string const& filename)
+#endif
+    {
+#if __cplusplus >= 201103L
       fileStream_.open(filename, std::fstream::in | std::fstream::binary);
+#else
+      fileStream_.open(filename.c_str(), std::fstream::in | std::fstream::binary);
+#endif	  
       if (!fileStream_.is_open()) {
         std::stringstream errorString;
         errorString << "Could not open file: " << filename;

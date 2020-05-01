@@ -20,8 +20,13 @@ namespace bw64 {
    * @returns `unique_ptr` to a Bw64Reader instance that is ready to read
    * samples.
    */
-  inline std::unique_ptr<Bw64Reader> readFile(const std::string& filename) {
-    return std::unique_ptr<Bw64Reader>(new Bw64Reader(filename.c_str()));
+#if __cplusplus >= 201703L
+  inline std::unique_ptr<Bw64Reader> readFile(std::filesystem::path const& filename)
+#else
+  inline std::unique_ptr<Bw64Reader> readFile(std::string const& filename)
+#endif
+  {
+    return std::unique_ptr<Bw64Reader>(new Bw64Reader(filename));
   }
 
   /**
@@ -45,11 +50,25 @@ namespace bw64 {
    * samples.
    *
    */
+
+#if __cplusplus >= 201703L
   inline std::unique_ptr<Bw64Writer> writeFile(
-      const std::string& filename, uint16_t channels = 1u,
-      uint32_t sampleRate = 48000u, uint16_t bitDepth = 24u,
+      std::filesystem::path const& filename,
+      uint16_t channels = 1u,
+      uint32_t sampleRate = 48000u,
+      uint16_t bitDepth = 24u,
       std::shared_ptr<ChnaChunk> chnaChunk = nullptr,
-      std::shared_ptr<AxmlChunk> axmlChunk = nullptr) {
+      std::shared_ptr<AxmlChunk> axmlChunk = nullptr) 
+#else
+  inline std::unique_ptr<Bw64Writer> writeFile(
+      std::string const& filename,
+      uint16_t channels = 1u,
+      uint32_t sampleRate = 48000u,
+      uint16_t bitDepth = 24u,
+      std::shared_ptr<ChnaChunk> chnaChunk = nullptr,
+      std::shared_ptr<AxmlChunk> axmlChunk = nullptr) 
+#endif
+  {
     std::vector<std::shared_ptr<Chunk>> additionalChunks;
     if (chnaChunk) {
       additionalChunks.push_back(chnaChunk);
@@ -58,7 +77,7 @@ namespace bw64 {
       additionalChunks.push_back(axmlChunk);
     }
     return std::unique_ptr<Bw64Writer>(new Bw64Writer(
-        filename.c_str(), channels, sampleRate, bitDepth, additionalChunks));
+        filename, channels, sampleRate, bitDepth, additionalChunks));
   }
 
 }  // namespace bw64
