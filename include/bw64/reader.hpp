@@ -216,7 +216,7 @@ namespace bw64 {
     /**
      * @brief Seek a frame position in the DataChunk
      */
-    void seek(int32_t offset, std::ios_base::seekdir way = std::ios::beg) {
+    void seek(int64_t offset, std::ios_base::seekdir way = std::ios::beg) {
       const int64_t frameOffset =
           offset * static_cast<int64_t>(formatChunk()->blockAlignment());
       const int64_t chunkPosition =
