@@ -31,7 +31,17 @@ namespace bw64 {
    * class, meaning that the file will be openend and initialized (parse header,
    * format etc.) on construction, and closed on destruction.
    */
-  class Bw64Reader {
+class Bw64Reader
+{
+
+  private:
+    template<typename ChunkT>
+    std::shared_ptr<ChunkT> get_chunk(uint32_t chunkId) const
+    {
+        auto chunk = find_chunk(chunks_, chunkId);
+        return std::static_pointer_cast<ChunkT>(chunk);
+    }
+    
    public:
     /**
      * @brief Open a new BW64 file for reading
@@ -118,51 +128,28 @@ namespace bw64 {
     /// @brief Get block alignment
     uint16_t blockAlignment() const { return channels() * bitDepth() / 8; }
 
-    template <typename ChunkType>
-    std::vector<std::shared_ptr<ChunkType>> chunksWithId(
-        const std::vector<Chunk>& chunks, uint32_t chunkId) const {
-      std::vector<char> foundChunks;
-      auto chunk =
-          std::copy_if(chunks.begin(), chunks.end(), foundChunks.begin(),
-                       [chunkId](const std::shared_ptr<Chunk> chunk) {
-                         return chunk->id() == chunkId;
-                       });
-      return foundChunks;
-    }
-
-    template <typename ChunkType>
-    std::shared_ptr<ChunkType> chunk(
-        const std::vector<std::shared_ptr<Chunk>>& chunks,
-        uint32_t chunkId) const {
-      auto chunk = std::find_if(chunks.begin(), chunks.end(),
-                                [chunkId](const std::shared_ptr<Chunk> chunk) {
-                                  return chunk->id() == chunkId;
-                                });
-      if (chunk != chunks.end()) {
-        return std::static_pointer_cast<ChunkType>(*chunk);
-      } else {
-        return nullptr;
-      }
-    }
-
     /**
      * @brief Get 'ds64' chunk
      *
      * @returns `std::shared_ptr` to DataSize64Chunk if present and otherwise
      * a nullptr.
      */
-    std::shared_ptr<DataSize64Chunk> ds64Chunk() const {
-      return chunk<DataSize64Chunk>(chunks_, utils::fourCC("ds64"));
+    std::shared_ptr<DataSize64Chunk> ds64Chunk() const
+    {
+        return get_chunk<DataSize64Chunk>(utils::fourCC("ds64"));
     }
+    
     /**
      * @brief Get 'fmt ' chunk
      *
      * @returns `std::shared_ptr` to FormatInfoChunk if present and otherwise
      * a nullptr.
      */
-    std::shared_ptr<FormatInfoChunk> formatChunk() const {
-      return chunk<FormatInfoChunk>(chunks_, utils::fourCC("fmt "));
+    std::shared_ptr<FormatInfoChunk> formatChunk() const 
+    {
+        return get_chunk<FormatInfoChunk>(utils::fourCC("fmt "));
     }
+    
     /**
      * @brief Get 'data' chunk
      *
@@ -172,26 +159,43 @@ namespace bw64 {
      * @returns `std::shared_ptr` to DataChunk if present and otherwise
      * a nullptr.
      */
-    std::shared_ptr<DataChunk> dataChunk() const {
-      return chunk<DataChunk>(chunks_, utils::fourCC("data"));
+    std::shared_ptr<DataChunk> dataChunk() const
+    {
+        return get_chunk<DataChunk>(utils::fourCC("data"));
     }
+    
     /**
      * @brief Get 'chna' chunk
      *
      * @returns `std::shared_ptr` to ChnaChunk if present and otherwise a
      * nullptr.
      */
-    std::shared_ptr<ChnaChunk> chnaChunk() const {
-      return chunk<ChnaChunk>(chunks_, utils::fourCC("chna"));
+    std::shared_ptr<ChnaChunk> chnaChunk() const
+    {
+        return get_chunk<ChnaChunk>(utils::fourCC("chna"));
     }
+    
     /**
      * @brief Get 'axml' chunk
      *
      * @returns `std::shared_ptr` to AxmlChunk if present and otherwise a
      * nullptr.
      */
-    std::shared_ptr<AxmlChunk> axmlChunk() const {
-      return chunk<AxmlChunk>(chunks_, utils::fourCC("axml"));
+    std::shared_ptr<AxmlChunk> axmlChunk() const 
+    {
+        return get_chunk<AxmlChunk>(utils::fourCC("axml"));
+    }
+
+    /**
+     * @brief Get an unknown chunk based on chunkId
+     *
+     * @returns `std::shared_ptr` to UnknownChunk if present and otherwise a
+     * nullptr.
+     */
+    std::shared_ptr<UnknownChunk> unknownChunk(uint32_t chunkId) const
+    {
+        auto chunk = find_chunk(chunks_, chunkId);
+        return std::dynamic_pointer_cast<UnknownChunk>(chunk);
     }
 
     /**
@@ -360,7 +364,7 @@ namespace bw64 {
     uint16_t bitsPerSample_;
 
     std::vector<char> rawDataBuffer_;
-    std::vector<std::shared_ptr<Chunk>> chunks_;
+    std::vector<SharedChunk> chunks_;
     std::vector<ChunkHeader> chunkHeaders_;
   };
 }  // namespace bw64

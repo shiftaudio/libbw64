@@ -32,7 +32,16 @@ namespace bw64 {
    * headers etc.) on construction, and closed and finalized (writing chunk
    * sizes etc.) on destruction.
    */
-  class Bw64Writer {
+class Bw64Writer
+{
+  private:
+    template<typename ChunkT>
+    std::shared_ptr<ChunkT> get_chunk(uint32_t chunkId) const
+    {
+        auto chunk = find_chunk(chunks_, chunkId);
+        return std::static_pointer_cast<ChunkT>(chunk);
+    }
+
    public:
     /**
      * @brief Open a new BW64 file for writing
@@ -55,13 +64,13 @@ namespace bw64 {
                uint16_t channels,
                uint32_t sampleRate,
                uint16_t bitDepth,
-               std::vector<std::shared_ptr<Chunk>> additionalChunks)
+               std::vector<SharedChunk> additionalChunks)
 #else
     Bw64Writer(std::string const& filename,
                uint16_t channels,
                uint32_t sampleRate,
                uint16_t bitDepth,
-               std::vector<std::shared_ptr<Chunk>> additionalChunks)
+               std::vector<SharedChunk> additionalChunks)
 #endif
     {
 #if __cplusplus >= 201103L
@@ -120,47 +129,29 @@ namespace bw64 {
       return dataChunk()->size() / formatChunk()->blockAlignment();
     }
 
-    template <typename ChunkType>
-    std::vector<std::shared_ptr<ChunkType>> chunksWithId(
-        const std::vector<Chunk>& chunks, uint32_t chunkId) const {
-      std::vector<char> foundChunks;
-      auto chunk =
-          std::copy_if(chunks.begin(), chunks.end(), foundChunks.begin(),
-                       [chunkId](const std::shared_ptr<Chunk> chunk) {
-                         return chunk->id() == chunkId;
-                       });
-      return foundChunks;
+    std::shared_ptr<DataSize64Chunk> ds64Chunk() const 
+    {
+        return get_chunk<DataSize64Chunk>(utils::fourCC("ds64"));
     }
-
-    template <typename ChunkType>
-    std::shared_ptr<ChunkType> chunk(
-        const std::vector<std::shared_ptr<Chunk>>& chunks,
-        uint32_t chunkId) const {
-      auto chunk = std::find_if(chunks.begin(), chunks.end(),
-                                [chunkId](const std::shared_ptr<Chunk> chunk) {
-                                  return chunk->id() == chunkId;
-                                });
-      if (chunk != chunks.end()) {
-        return std::static_pointer_cast<ChunkType>(*chunk);
-      } else {
-        return nullptr;
-      }
+    
+    std::shared_ptr<FormatInfoChunk> formatChunk() const 
+    {
+        return get_chunk<FormatInfoChunk>(utils::fourCC("fmt "));
     }
-
-    std::shared_ptr<DataSize64Chunk> ds64Chunk() const {
-      return chunk<DataSize64Chunk>(chunks_, utils::fourCC("ds64"));
+    
+    std::shared_ptr<DataChunk> dataChunk() const 
+    {
+        return get_chunk<DataChunk>(utils::fourCC("data"));
     }
-    std::shared_ptr<FormatInfoChunk> formatChunk() const {
-      return chunk<FormatInfoChunk>(chunks_, utils::fourCC("fmt "));
+    
+    std::shared_ptr<ChnaChunk> chnaChunk() const 
+    {
+        return get_chunk<ChnaChunk>(utils::fourCC("chna"));
     }
-    std::shared_ptr<DataChunk> dataChunk() const {
-      return chunk<DataChunk>(chunks_, utils::fourCC("data"));
-    }
-    std::shared_ptr<ChnaChunk> chnaChunk() const {
-      return chunk<ChnaChunk>(chunks_, utils::fourCC("chna"));
-    }
-    std::shared_ptr<AxmlChunk> axmlChunk() const {
-      return chunk<AxmlChunk>(chunks_, utils::fourCC("axml"));
+    
+    std::shared_ptr<AxmlChunk> axmlChunk() const 
+    {
+        return get_chunk<AxmlChunk>(utils::fourCC("axml"));
     }
 
     /// @brief Check if file is bigger than 4GB and therefore a BW64 file
@@ -185,10 +176,16 @@ namespace bw64 {
       fileStream_.seekp(last_position);
     }
 
-    void setAxmlChunk(std::shared_ptr<Chunk> chunk) {
-      postDataChunks_.push_back(chunk);
+    void addPostDataChunk(SharedChunk chunk)
+    {
+        postDataChunks_.push_back(chunk);
     }
 
+    void setAxmlChunk(SharedChunk chunk)
+    {
+        addPostDataChunk(chunk);
+    }
+    
     /// @brief Get the chunk size for header
     uint32_t chunkSizeForHeader(uint32_t id) {
       if (chunkHeader(id).size >= UINT32_MAX) {
@@ -323,9 +320,9 @@ namespace bw64 {
    private:
     std::ofstream fileStream_;
     std::vector<char> rawDataBuffer_;
-    std::vector<std::shared_ptr<Chunk>> chunks_;
+    std::vector<SharedChunk> chunks_;
     std::vector<ChunkHeader> chunkHeaders_;
-    std::vector<std::shared_ptr<Chunk>> postDataChunks_;
+    std::vector<SharedChunk> postDataChunks_;
   };
 
 }  // namespace bw64

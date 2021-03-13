@@ -47,6 +47,24 @@ namespace bw64 {
     Chunk() = default;
   };
 
+    typedef std::shared_ptr<Chunk> SharedChunk;
+    
+    /**
+    * @brief Find a chunk
+    */
+    inline SharedChunk 
+    find_chunk(const std::vector<SharedChunk>& chunks, uint32_t chunkId)
+    {
+        auto chunk = std::find_if(chunks.begin(), chunks.end(),
+                                [chunkId](const SharedChunk chunk) {
+                                  return chunk->id() == chunkId;
+                                });
+        if (chunk != chunks.end())
+            return *chunk;
+        else
+            return nullptr;
+    }
+    
   /**
    * @brief Class representation of a custom chunk
    *
@@ -70,13 +88,15 @@ namespace bw64 {
                 std::ostreambuf_iterator<char>(stream));
     }
 
+    const char* data() {return data_.data();}
+    
    private:
     uint32_t chunkId_;
     std::vector<char> data_;
   };
 
   /**
-   * @brief Class representation of the ExtraData of a FormatInfoChunk
+   * @brief Class representation of the ExtraData of a FormatInfoChunk
    */
   class ExtraData {
    public:
@@ -105,7 +125,7 @@ namespace bw64 {
   };
 
   /**
-   * @brief Class representation of a FormatInfoChunk
+   * @brief Class representation of a FormatInfoChunk
    */
   class FormatInfoChunk : public Chunk {
    public:
@@ -185,7 +205,7 @@ namespace bw64 {
   };
 
   /**
-   * @brief Class representation of a DataChunk
+   * @brief Class representation of a DataChunk
    */
   class DataChunk : public Chunk {
    public:
@@ -214,7 +234,7 @@ namespace bw64 {
   };
 
   /**
-   * @brief Class representation of a DataChunk
+   * @brief Class representation of a DataChunk
    */
   class JunkChunk : public Chunk {
    public:
@@ -233,7 +253,7 @@ namespace bw64 {
   };
 
   /**
-   * @brief Class representation of an AxmlChunk
+   * @brief Class representation of an AxmlChunk
    */
   class AxmlChunk : public Chunk {
    public:
@@ -259,7 +279,7 @@ namespace bw64 {
   };
 
   /**
-   * @brief Class representation of an AudioId field
+   * @brief Class representation of an AudioId field
    */
   class AudioId {
    public:
@@ -346,7 +366,7 @@ namespace bw64 {
   };
 
   /**
-   * @brief Class representation of an ChnaChunk
+   * @brief Class representation of an ChnaChunk
    */
   class ChnaChunk : public Chunk {
    public:
@@ -387,7 +407,7 @@ namespace bw64 {
   };
 
   /**
-   * @brief Class representation of a DataSize64 chunk
+   * @brief Class representation of a DataSize64 chunk
    */
   class DataSize64Chunk : public Chunk {
    public:
