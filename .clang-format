@@ -1,4 +1,4 @@
-BasedOnStyle: Google
-NamespaceIndentation: All
-AlignTrailingComments: false
+BasedOnStyle: WebKit
+NamespaceIndentation: None
+AlignTrailingComments: true
 SortIncludes: false
