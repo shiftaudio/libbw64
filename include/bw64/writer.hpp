@@ -1,5 +1,6 @@
 /// @file writer.hpp
 #pragma once
+#include "chunks.hpp"
 #include <algorithm>
 #include <fstream>
 #include <memory>
@@ -9,8 +10,6 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#include "chunks.hpp"
-#include "utils.hpp"
 
 #if __cplusplus >= 201703L
 #include <filesystem>
@@ -181,6 +180,16 @@ public:
     void addPostDataChunk(SharedChunk chunk)
     {
         postDataChunks_.push_back(chunk);
+    }
+
+    void addPostDataChunk(uint32_t chunk_id, const std::string& data)
+    {
+        addPostDataChunk(std::make_shared<bw64::UnknownChunk>(chunk_id, data));
+    }
+    
+    void addPostDataChunk(uint32_t chunk_id, std::string&& data)
+    {
+        addPostDataChunk(std::make_shared<bw64::UnknownChunk>(chunk_id, std::move(data)));
     }
 
     void setAxmlChunk(SharedChunk chunk)

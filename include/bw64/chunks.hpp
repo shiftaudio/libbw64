@@ -1,5 +1,6 @@
 /// @file chunks.hpp
 #pragma once
+#include "utils.hpp"
 #include <cstring>
 #include <iterator>
 #include <map>
@@ -9,7 +10,6 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
-#include "utils.hpp"
 
 namespace bw64 {
 
@@ -80,26 +80,35 @@ public:
     UnknownChunk(uint32_t id) { chunkId_ = id; }
 
     UnknownChunk(std::istream& stream, uint32_t id, uint64_t size)
+    : chunkId_(id)
+    , data_(size, '\0')
     {
-        chunkId_ = id;
-        data_.resize(size);
         stream.read(&data_[0], size);
     }
-
+        
+    UnknownChunk(uint32_t id, const std::string& data)
+    : chunkId_(id)
+    , data_(data)
+    {}
+    
+    UnknownChunk(uint32_t id, std::string&& data)
+    : chunkId_(id)
+    , data_(std::move(data))
+    {}
+        
     uint32_t id() const override { return chunkId_; }
     uint64_t size() const override { return data_.size(); }
 
     void write(std::ostream& stream) const override
     {
-        std::copy(data_.begin(), data_.end(),
-            std::ostreambuf_iterator<char>(stream));
+        stream.write(data_.data(), data_.size());
     }
 
     const char* data() { return data_.data(); }
 
 private:
     uint32_t chunkId_;
-    std::vector<char> data_;
+    std::string data_;
 };
 
 /**
@@ -248,51 +257,33 @@ private:
 /**
 * @brief Class representation of a DataChunk
 */
+/*
 class JunkChunk : public Chunk {
 public:
-    JunkChunk() { data_.resize(28, '\0'); }
+    JunkChunk() : data_(28) {}
 
     uint32_t id() const override { return utils::fourCC("JUNK"); }
     uint64_t size() const override { return data_.size(); }
 
     void write(std::ostream& stream) const override
     {
-        std::copy(data_.begin(), data_.end(),
-            std::ostreambuf_iterator<char>(stream));
+        stream.write(data_.data(), data_.size());
     }
 
 private:
     std::vector<char> data_;
 };
+*/
 
 /**
 * @brief Class representation of an AxmlChunk
 */
-class AxmlChunk : public Chunk {
+class AxmlChunk : public UnknownChunk {
 public:
-    static uint32_t Id() { return utils::fourCC("axml"); }
-
-    AxmlChunk(const std::string& axml)
-    {
-        std::copy(axml.begin(), axml.end(), std::back_inserter(data_));
-    }
-
-    uint32_t id() const override { return AxmlChunk::Id(); }
-    uint64_t size() const override { return data_.size(); }
-
-    /*
-     * @brief Write the AxmlChunk to a stream
-     */
-    void write(std::ostream& stream) const override
-    {
-        std::copy(data_.begin(), data_.end(),
-            std::ostreambuf_iterator<char>(stream));
-    }
-
-private:
-    std::vector<char> data_;
+    AxmlChunk(const std::string& axml): UnknownChunk(utils::fourCC("axml"), axml) {}
+    AxmlChunk(std::string&& axml): UnknownChunk(utils::fourCC("axml"), std::move(axml)) {}
 };
-
+    
 /**
 * @brief Class representation of an AudioId field
 */

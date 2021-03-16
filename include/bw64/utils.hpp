@@ -7,7 +7,6 @@
 #include <sstream>
 #include <stdexcept>
 #include <stdint.h>
-#include "chunks.hpp"
 
 namespace bw64 {
 namespace utils {

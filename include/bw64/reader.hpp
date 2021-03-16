@@ -1,5 +1,6 @@
 /// @file reader.hpp
 #pragma once
+#include "parser.hpp"
 #include <algorithm>
 #include <fstream>
 #include <memory>
@@ -9,9 +10,6 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#include "chunks.hpp"
-#include "utils.hpp"
-#include "parser.hpp"
 
 #include <iostream>
 
